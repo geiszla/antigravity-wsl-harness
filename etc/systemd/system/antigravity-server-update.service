@@ -1,0 +1,8 @@
+[Unit]
+Description=Restart antigravity-server if the wanted server version changed
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/antigravity-server-update-check.sh
+# A restart first waits for the old server to stop (up to its 45 s stop timeout).
+TimeoutStartSec=120

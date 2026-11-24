@@ -1,0 +1,2 @@
+# Everything here runs inside Linux; keep LF endings even in a Windows checkout.
+* text=auto eol=lf

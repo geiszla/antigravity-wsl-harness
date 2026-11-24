@@ -1,0 +1,35 @@
+# Keep WSL distros alive independent of wsl.exe client lifetime.
+# Works around the Antigravity/open-remote-wsl anchor-window bug
+# (closing the first WSL window killed the distro and every other WSL window).
+# Ref: https://github.com/jeanp413/open-remote-wsl/issues/2
+#      https://github.com/microsoft/WSL/issues/13291
+
+[general]
+# Never terminate a distro instance when its last Windows client exits
+# (default: 15000 ms). Requires WSL >= 2.5.4.
+instanceIdleTimeout=-1
+
+[wsl2]
+# Never shut down the utility VM when idle (default: 60000 ms).
+vmIdleTimeout=-1
+# Cap guest RAM so WSL cannot balloon and starve Windows. On 2026-07-16 the
+# VM grew to ~13.5 GB while Windows hit 95% RAM; the resulting paging storm
+# wedged the VM's process-launch plane and hung the Antigravity server
+# (ptyHost heartbeat lost). Default cap is 50% of RAM (~16 GB) — too high on a
+# 32 GB box that also runs the Antigravity Electron UI. 12 GB physical keeps
+# ~20 GB for Windows; heavy guest workloads spill to the swap file below
+# instead of taking Windows RAM.
+memory=12GB
+swap=12GB
+
+[experimental]
+# Return idle Linux page cache to Windows so the pinned VM doesn't hold RAM.
+# dropcache (the current WSL default) frees clean page cache only; gradual's
+# cgroup memory.reclaim also swapped out idle anonymous memory, exiling the
+# editor language servers' multi-GB heaps to the swap VHD (2026-08-17: 8 GB in
+# swap, tsserver reference search taking tens of seconds paging back in).
+autoMemoryReclaim=dropcache
+# Make new/converted VHDs sparse so freed guest disk space returns to Windows
+# (does not retroactively shrink an existing VHD; for that run
+#  wsl --manage <distro> --set-sparse true).
+sparseVhd=true

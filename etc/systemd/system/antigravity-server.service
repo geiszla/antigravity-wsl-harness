@@ -1,0 +1,39 @@
+[Unit]
+Description=Antigravity IDE server (window-independent, works around anchor-window bug)
+Documentation=https://github.com/jeanp413/open-remote-wsl/issues/2
+After=network.target local-fs.target
+# Backstop: a persistently failing launcher must not keep pkilling working
+# window-owned servers via Restart=always. After 5 failures in 5 min the unit
+# goes to 'failed' (the update checker reset-fails it on the next IDE update).
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+# Type=simple, deliberately NOT notify: with notify, a missed --ready signal
+# makes systemd SIGTERM a perfectly healthy, listening server at the start
+# timeout (observed). Type=simple has no such failure mode. The launcher records
+# the server it confirmed listening in ~/.antigravity-ide-server/.service-server-dir.
+Type=simple
+User=YOUR_LINUX_USER
+Environment=HOME=/home/YOUR_LINUX_USER
+# /run/antigravity-server: created before ExecStart, always writable by the
+# service user (so the failure marker survives even if $HOME/.antigravity-ide-
+# server is not writable), preserved across restarts/failures so the checker can
+# still read it, wiped on reboot (a reboot is a clean slate for retry backoff).
+RuntimeDirectory=antigravity-server
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/bin/antigravity-server-launch.sh
+Restart=always
+RestartSec=2
+# The launcher exits 75 for every deliberate/known failure (no server, server
+# died/silent during startup, quick post-readiness crash). Don't let
+# Restart=always re-burst on those — the update checker owns retry with backoff.
+# Unexpected exits (crash after a healthy run) still auto-restart.
+RestartPreventExitStatus=75
+# NB: TimeoutStopFailureMode is overridden in the drop-in
+# /etc/systemd/system/antigravity-server.service.d/10-timeout-terminate.conf —
+# it must be a service-specific drop-in to beat Fedora's GLOBAL service.d
+# drop-in (10-timeout-abort.conf); setting it in this unit body loses to it.
+
+[Install]
+WantedBy=multi-user.target

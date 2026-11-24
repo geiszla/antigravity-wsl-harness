@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic Antigravity server version/health check (new versions, cached downgrades, failed service)
+
+[Timer]
+# Wall-clock schedule. Minutely keeps the post-update anchor-bug exposure window
+# to ~1 min (the check is one grep of product.json).
+OnCalendar=minutely
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

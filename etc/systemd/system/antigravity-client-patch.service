@@ -1,0 +1,22 @@
+[Unit]
+Description=Re-apply the Antigravity client reconnect-grace patch (Source Control after hibernate)
+Documentation=https://github.com/microsoft/vscode/pull/338062
+
+[Service]
+# Started on every tick of antigravity-server-update.service (see its drop-in
+# 10-client-patch.conf). Runs as the service user, never root: it only edits
+# files the Windows user owns, through /mnt/c.
+Type=oneshot
+User=YOUR_LINUX_USER
+Environment=HOME=/home/YOUR_LINUX_USER
+# Per-boot cache so an idle tick costs two small reads instead of hashing the
+# 27 MB bundle. Safe to delete.
+RuntimeDirectory=antigravity-client-patch
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/bin/antigravity-client-patch.sh
+TimeoutStartSec=120
+NoNewPrivileges=yes
+Nice=10
+# The script logs real events at notice/warning; drop the per-minute
+# Starting/Finished/Deactivated chatter.
+LogLevelMax=notice
